@@ -2,6 +2,7 @@ package hub
 
 import (
 	"log"
+	"realtime-chat/internal/room"
 	"sync"
 	"time"
 )
@@ -12,10 +13,25 @@ type Client struct {
 	Username string
 	Send     chan []byte
 	Hub      *Hub
+	RoomID   string // Current room the client is in
 }
 
+// GetID returns the client ID
+func (c *Client) GetID() string {
+	return c.ID
+}
 
-// Hub maintains the set of active clients and broadcasts messages to them
+// GetUsername returns the client username
+func (c *Client) GetUsername() string {
+	return c.Username
+}
+
+// GetSendChannel returns the client's send channel
+func (c *Client) GetSendChannel() chan []byte {
+	return c.Send
+}
+
+// Hub maintains the set of active clients and manages room operations
 type Hub struct {
 	// Registered clients
 	clients map[*Client]bool
@@ -32,18 +48,27 @@ type Hub struct {
 	// Channel for broadcasting messages
 	Broadcast chan []byte
 
+	// Room manager for handling multiple rooms
+	RoomManager *room.Manager
+
 	// Mutex for thread-safe operations
 	mutex sync.RWMutex
 }
 
 // NewHub creates a new hub instance
 func NewHub() *Hub {
+	roomManager := room.NewManager()
+
+	// Start the room manager in a goroutine
+	go roomManager.Run()
+
 	return &Hub{
-		clients:    make(map[*Client]bool),
-		broadcast:  make(chan []byte),
-		Register:   make(chan *Client),
-		Unregister: make(chan *Client),
-		Broadcast:  make(chan []byte),
+		clients:     make(map[*Client]bool),
+		broadcast:   make(chan []byte),
+		Register:    make(chan *Client),
+		Unregister:  make(chan *Client),
+		Broadcast:   make(chan []byte),
+		RoomManager: roomManager,
 	}
 }
 
@@ -55,10 +80,10 @@ func (h *Hub) Run() {
 			h.mutex.Lock()
 			h.clients[client] = true
 			h.mutex.Unlock()
-			
-			log.Printf("Client %s (%s) connected. Total clients: %d", 
+
+			log.Printf("Client %s (%s) connected. Total clients: %d",
 				client.ID, client.Username, len(h.clients))
-			
+
 			// Send welcome message
 			welcomeMsg := []byte(`{"type":"system","message":"` + client.Username + ` joined the chat","timestamp":"` + getCurrentTime() + `"}`)
 			h.broadcastMessage(welcomeMsg, client)
@@ -70,10 +95,10 @@ func (h *Hub) Run() {
 				close(client.Send)
 			}
 			h.mutex.Unlock()
-			
-			log.Printf("Client %s (%s) disconnected. Total clients: %d", 
+
+			log.Printf("Client %s (%s) disconnected. Total clients: %d",
 				client.ID, client.Username, len(h.clients))
-			
+
 			// Send goodbye message
 			goodbyeMsg := []byte(`{"type":"system","message":"` + client.Username + ` left the chat","timestamp":"` + getCurrentTime() + `"}`)
 			h.broadcastMessage(goodbyeMsg, nil)
@@ -88,13 +113,13 @@ func (h *Hub) Run() {
 func (h *Hub) broadcastMessage(message []byte, sender *Client) {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
-	
+
 	for client := range h.clients {
 		// Don't send the message back to the sender
 		if sender != nil && client == sender {
 			continue
 		}
-		
+
 		select {
 		case client.Send <- message:
 		default:

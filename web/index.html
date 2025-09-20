@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-time Chat App</title>
+    <title>Real-time Chat App - Multiple Rooms</title>
     <style>
         * {
             margin: 0;
@@ -21,24 +21,128 @@
         }
 
         .chat-container {
-            width: 90%;
-            max-width: 800px;
-            height: 80vh;
+            width: 95%;
+            max-width: 1200px;
+            height: 85vh;
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
             padding: 20px;
             text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .sidebar-header h2 {
             font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .user-info {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .room-controls {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .room-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 25px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            outline: none;
+        }
+
+        .room-button {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            transition: background 0.3s;
+        }
+
+        .room-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .room-button.active {
+            background: rgba(255,255,255,0.4);
+        }
+
+        .rooms-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px;
+        }
+
+        .room-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .room-item:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .room-item.active {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .room-name {
             font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .room-info {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .chat-header {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .current-room {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
         }
 
         .connection-status {
@@ -181,28 +285,60 @@
             font-style: italic;
             font-size: 0.9em;
         }
+
+        .no-room-message {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin-top: 50px;
+        }
     </style>
 </head>
 <body>
     <div class="chat-container">
-        <div class="chat-header">
-            🚀 Real-time Chat App
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>🚀 Chat Rooms</h2>
+                <div class="user-info" id="userInfo">Anonymous</div>
+            </div>
+            
+            <div class="room-controls">
+                <input type="text" id="newRoomInput" class="room-input" placeholder="New room name...">
+                <button id="createRoomBtn" class="room-button">Create Room</button>
+                <button id="listRoomsBtn" class="room-button">Refresh Rooms</button>
+            </div>
+            
+            <div class="rooms-list" id="roomsList">
+                <!-- Rooms will be populated here -->
+            </div>
         </div>
-        
-        <div class="connection-status" id="connectionStatus">
-            <span class="disconnected">Disconnected</span>
-        </div>
-        
-        <div class="messages" id="messages"></div>
-        
-        <div class="typing-indicator" id="typingIndicator" style="display: none;">
-            Someone is typing...
-        </div>
-        
-        <div class="input-container">
-            <input type="text" id="usernameInput" class="username-input" placeholder="Username" value="Anonymous">
-            <input type="text" id="messageInput" class="message-input" placeholder="Type your message..." disabled>
-            <button id="sendButton" class="send-button" disabled>Send</button>
+
+        <!-- Main Chat Area -->
+        <div class="main-chat">
+            <div class="chat-header">
+                <div class="current-room" id="currentRoom">Select a room to start chatting</div>
+            </div>
+            
+            <div class="connection-status" id="connectionStatus">
+                <span class="disconnected">Disconnected</span>
+            </div>
+            
+            <div class="messages" id="messages">
+                <div class="no-room-message">
+                    Please select a room from the sidebar to start chatting
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                Someone is typing...
+            </div>
+            
+            <div class="input-container">
+                <input type="text" id="usernameInput" class="username-input" placeholder="Username" value="Anonymous">
+                <input type="text" id="messageInput" class="message-input" placeholder="Type your message..." disabled>
+                <button id="sendButton" class="send-button" disabled>Send</button>
+            </div>
         </div>
     </div>
 
@@ -212,6 +348,7 @@
                 this.socket = null;
                 this.isConnected = false;
                 this.username = 'Anonymous';
+                this.currentRoomId = null;
                 this.typingTimeout = null;
                 
                 this.initializeElements();
@@ -226,11 +363,18 @@
                 this.usernameInput = document.getElementById('usernameInput');
                 this.messageInput = document.getElementById('messageInput');
                 this.sendButton = document.getElementById('sendButton');
+                this.userInfo = document.getElementById('userInfo');
+                this.currentRoom = document.getElementById('currentRoom');
+                this.newRoomInput = document.getElementById('newRoomInput');
+                this.createRoomBtn = document.getElementById('createRoomBtn');
+                this.listRoomsBtn = document.getElementById('listRoomsBtn');
+                this.roomsList = document.getElementById('roomsList');
             }
 
             setupEventListeners() {
                 this.usernameInput.addEventListener('change', (e) => {
                     this.username = e.target.value || 'Anonymous';
+                    this.userInfo.textContent = this.username;
                 });
 
                 this.messageInput.addEventListener('keypress', (e) => {
@@ -247,6 +391,20 @@
                 this.sendButton.addEventListener('click', () => {
                     this.sendMessage();
                 });
+
+                this.createRoomBtn.addEventListener('click', () => {
+                    this.createRoom();
+                });
+
+                this.newRoomInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.createRoom();
+                    }
+                });
+
+                this.listRoomsBtn.addEventListener('click', () => {
+                    this.listRooms();
+                });
             }
 
             connect() {
@@ -260,12 +418,13 @@
                     this.updateConnectionStatus(true);
                     this.messageInput.disabled = false;
                     this.sendButton.disabled = false;
+                    this.listRooms();
                     console.log('Connected to chat server');
                 };
 
                 this.socket.onmessage = (event) => {
-                    const message = JSON.parse(event.data);
-                    this.displayMessage(message);
+                    const data = JSON.parse(event.data);
+                    this.handleMessage(data);
                 };
 
                 this.socket.onclose = () => {
@@ -275,7 +434,6 @@
                     this.sendButton.disabled = true;
                     console.log('Disconnected from chat server');
                     
-                    // Attempt to reconnect after 3 seconds
                     setTimeout(() => {
                         if (!this.isConnected) {
                             this.connect();
@@ -299,9 +457,53 @@
                 }
             }
 
+            createRoom() {
+                const roomName = this.newRoomInput.value.trim();
+                if (roomName && this.isConnected) {
+                    const roomAction = {
+                        type: 'create',
+                        roomName: roomName
+                    };
+                    
+                    this.socket.send(JSON.stringify(roomAction));
+                    this.newRoomInput.value = '';
+                }
+            }
+
+            joinRoom(roomId) {
+                if (this.isConnected) {
+                    const roomAction = {
+                        type: 'join',
+                        roomId: roomId
+                    };
+                    
+                    this.socket.send(JSON.stringify(roomAction));
+                }
+            }
+
+            leaveRoom() {
+                if (this.currentRoomId && this.isConnected) {
+                    const roomAction = {
+                        type: 'leave'
+                    };
+                    
+                    this.socket.send(JSON.stringify(roomAction));
+                }
+            }
+
+            listRooms() {
+                if (this.isConnected) {
+                    const roomAction = {
+                        type: 'list'
+                    };
+                    
+                    this.socket.send(JSON.stringify(roomAction));
+                }
+            }
+
             sendMessage() {
                 const message = this.messageInput.value.trim();
-                if (message && this.isConnected) {
+                if (message && this.isConnected && this.currentRoomId) {
                     const messageData = {
                         type: 'message',
                         content: message,
@@ -311,6 +513,69 @@
                     this.socket.send(JSON.stringify(messageData));
                     this.messageInput.value = '';
                 }
+            }
+
+            handleMessage(data) {
+                switch (data.type) {
+                    case 'room_created':
+                        this.showNotification(`Room "${data.roomName}" created successfully!`);
+                        this.listRooms();
+                        break;
+                        
+                    case 'room_joined':
+                        this.currentRoomId = data.roomId;
+                        this.currentRoom.textContent = `Room: ${data.roomName}`;
+                        this.messagesContainer.innerHTML = '';
+                        this.showNotification(`Joined room "${data.roomName}"`);
+                        this.listRooms();
+                        break;
+                        
+                    case 'room_left':
+                        this.currentRoomId = null;
+                        this.currentRoom.textContent = 'Select a room to start chatting';
+                        this.messagesContainer.innerHTML = '<div class="no-room-message">Please select a room from the sidebar to start chatting</div>';
+                        this.showNotification('Left the room');
+                        this.listRooms();
+                        break;
+                        
+                    case 'room_list':
+                        this.updateRoomsList(data.rooms);
+                        break;
+                        
+                    case 'room_error':
+                        this.showNotification(`Error: ${data.message}`);
+                        break;
+                        
+                    case 'system':
+                    case 'message':
+                        this.displayMessage(data);
+                        break;
+                }
+            }
+
+            updateRoomsList(rooms) {
+                this.roomsList.innerHTML = '';
+                
+                rooms.forEach(room => {
+                    const roomElement = document.createElement('div');
+                    roomElement.className = 'room-item';
+                    if (room.id === this.currentRoomId) {
+                        roomElement.classList.add('active');
+                    }
+                    
+                    roomElement.innerHTML = `
+                        <div class="room-name">${room.name}</div>
+                        <div class="room-info">${room.clientCount} users • Created by ${room.createdBy}</div>
+                    `;
+                    
+                    roomElement.addEventListener('click', () => {
+                        if (room.id !== this.currentRoomId) {
+                            this.joinRoom(room.id);
+                        }
+                    });
+                    
+                    this.roomsList.appendChild(roomElement);
+                });
             }
 
             displayMessage(message) {
@@ -337,13 +602,17 @@
             }
 
             handleTyping() {
-                // Simple typing indicator - in a real app, you'd send typing events to the server
                 clearTimeout(this.typingTimeout);
                 this.typingIndicator.style.display = 'block';
                 
                 this.typingTimeout = setTimeout(() => {
                     this.typingIndicator.style.display = 'none';
                 }, 1000);
+            }
+
+            showNotification(message) {
+                // Simple notification - you could enhance this with a proper notification system
+                console.log('Notification:', message);
             }
         }
 
