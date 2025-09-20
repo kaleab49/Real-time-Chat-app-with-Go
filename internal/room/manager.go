@@ -97,11 +97,11 @@ func (m *Manager) Run() {
 					GetUsername() string
 					GetSendChannel() chan []byte
 				}); ok {
-					// Create a new client for this room
+					// Create a room client that uses the hub client's send channel
 					roomClient := &Client{
 						ID:       client.GetID(),
 						Username: client.GetUsername(),
-						Send:     make(chan []byte, 256),
+						Send:     client.GetSendChannel(), // Use the hub client's channel
 						Room:     room,
 					}
 					

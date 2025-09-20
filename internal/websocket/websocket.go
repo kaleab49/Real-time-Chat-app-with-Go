@@ -102,9 +102,11 @@ func readPump(c *hub.Client, conn *websocket.Conn) {
 			break
 		}
 
-		// Try to parse as a room action first
+		// Try to parse as a room action first (only for specific room action types)
 		var roomAction RoomAction
-		if err := json.Unmarshal(messageBytes, &roomAction); err == nil && roomAction.Type != "" {
+		if err := json.Unmarshal(messageBytes, &roomAction); err == nil && 
+			(roomAction.Type == "create" || roomAction.Type == "join" || 
+			 roomAction.Type == "leave" || roomAction.Type == "list") {
 			// Handle room operations
 			handleRoomAction(c, roomAction, conn)
 			continue
@@ -131,13 +133,13 @@ func readPump(c *hub.Client, conn *websocket.Conn) {
 				Timestamp: msg.Timestamp,
 				RoomID:    c.RoomID,
 			}
-
+			
 			messageJSON, err := json.Marshal(roomMessage)
 			if err != nil {
 				log.Printf("Error marshaling room message: %v", err)
 				continue
 			}
-
+			
 			// Broadcast to the specific room
 			c.Hub.RoomManager.BroadcastToRoom(c.RoomID, messageJSON, nil)
 		} else {
@@ -147,7 +149,7 @@ func readPump(c *hub.Client, conn *websocket.Conn) {
 				log.Printf("Error marshaling message: %v", err)
 				continue
 			}
-
+			
 			c.Hub.Broadcast <- messageJSON
 		}
 	}

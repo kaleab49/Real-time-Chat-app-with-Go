@@ -12,7 +12,7 @@ import (
 func main() {
 	// Create a new hub for managing clients and broadcasting messages
 	h := hub.NewHub()
-	
+
 	// Start the hub in a goroutine
 	go h.Run()
 
@@ -23,11 +23,12 @@ func main() {
 
 	// Serve static files
 	//  (HTML, CSS, JS)
+	
 	http.Handle("/", http.FileServer(http.Dir("./web/")))
 
 	// Get the local IP address
 	localIP := getLocalIP()
-	
+
 	// Display server information
 	fmt.Println("🚀 Real-time Chat Server Starting...")
 	fmt.Println("==================================================")
@@ -37,7 +38,7 @@ func main() {
 	fmt.Println("💡 Share the network URL with other devices on your local network")
 	fmt.Println("🛑 Press Ctrl+C to stop the server")
 	fmt.Println("")
-	
+
 	log.Printf("Server starting on 0.0.0.0:8080 (accessible from local network)")
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }

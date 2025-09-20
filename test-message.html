@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Message Test</title>
+</head>
+<body>
+    <h1>Message Sending Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+    <button onclick="createRoom()">Create Room</button>
+    <button onclick="joinRoom()">Join Room</button>
+
+    <script>
+        let socket;
+        let currentRoomId = null;
+
+        function connect() {
+            socket = new WebSocket('ws://localhost:8080/ws?username=TestUser');
+            
+            socket.onopen = function() {
+                document.getElementById('status').textContent = 'Connected!';
+                console.log('Connected');
+            };
+            
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log('Received:', data);
+                
+                const messagesDiv = document.getElementById('messages');
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = JSON.stringify(data, null, 2);
+                messagesDiv.appendChild(messageDiv);
+                
+                // Handle room responses
+                if (data.type === 'room_created') {
+                    currentRoomId = data.roomId;
+                    console.log('Room created:', data.roomId);
+                } else if (data.type === 'room_joined') {
+                    currentRoomId = data.roomId;
+                    console.log('Joined room:', data.roomId);
+                }
+            };
+            
+            socket.onclose = function() {
+                document.getElementById('status').textContent = 'Disconnected';
+            };
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message && socket) {
+                const messageData = {
+                    type: 'message',
+                    content: message,
+                    username: 'TestUser'
+                };
+                
+                console.log('Sending:', messageData);
+                socket.send(JSON.stringify(messageData));
+                input.value = '';
+            }
+        }
+
+        function createRoom() {
+            if (socket) {
+                const roomAction = {
+                    type: 'create',
+                    roomName: 'Test Room ' + Date.now()
+                };
+                
+                console.log('Creating room:', roomAction);
+                socket.send(JSON.stringify(roomAction));
+            }
+        }
+
+        function joinRoom() {
+            if (socket && currentRoomId) {
+                const roomAction = {
+                    type: 'join',
+                    roomId: currentRoomId
+                };
+                
+                console.log('Joining room:', roomAction);
+                socket.send(JSON.stringify(roomAction));
+            }
+        }
+
+        // Connect when page loads
+        connect();
+    </script>
+</body>
+</html>
