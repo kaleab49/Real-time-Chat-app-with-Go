@@ -47,7 +47,7 @@ type RoomAction struct {
 }
 
 // HandleWebSocket handles WebSocket connections
-func HandleWebSocket(hub *hub.Hub, w http.ResponseWriter, r *http.Request) {
+func HandleWebSocket(h *hub.Hub, w http.ResponseWriter, r *http.Request) {
 	// Upgrade HTTP connection to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -66,12 +66,12 @@ func HandleWebSocket(hub *hub.Hub, w http.ResponseWriter, r *http.Request) {
 		ID:       generateClientID(),
 		Username: username,
 		Send:     make(chan []byte, 256),
-		Hub:      hub,
+		Hub:      h,
 		RoomID:   "", // Will be set when joining a room
 	}
 
 	// Register the client with the hub
-	hub.Register <- client
+	h.Register <- client
 
 	// Start goroutines for reading and writing
 	go writePump(client, conn)
