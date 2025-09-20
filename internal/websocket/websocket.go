@@ -131,13 +131,13 @@ func readPump(c *hub.Client, conn *websocket.Conn) {
 				Timestamp: msg.Timestamp,
 				RoomID:    c.RoomID,
 			}
-			
+
 			messageJSON, err := json.Marshal(roomMessage)
 			if err != nil {
 				log.Printf("Error marshaling room message: %v", err)
 				continue
 			}
-			
+
 			// Broadcast to the specific room
 			c.Hub.RoomManager.BroadcastToRoom(c.RoomID, messageJSON, nil)
 		} else {
@@ -147,7 +147,7 @@ func readPump(c *hub.Client, conn *websocket.Conn) {
 				log.Printf("Error marshaling message: %v", err)
 				continue
 			}
-			
+
 			c.Hub.Broadcast <- messageJSON
 		}
 	}
@@ -207,7 +207,7 @@ func handleRoomAction(c *hub.Client, action RoomAction, conn *websocket.Conn) {
 	case "create":
 		// Create a new room
 		roomID := c.Hub.RoomManager.CreateRoomAsync(action.RoomName, c.Username)
-		
+
 		// Send room created response
 		response := map[string]interface{}{
 			"type":     "room_created",
@@ -215,10 +215,10 @@ func handleRoomAction(c *hub.Client, action RoomAction, conn *websocket.Conn) {
 			"roomName": action.RoomName,
 			"message":  "Room created successfully",
 		}
-		
+
 		responseJSON, _ := json.Marshal(response)
 		c.Send <- responseJSON
-		
+
 		// Auto-join the created room
 		joinAction := RoomAction{
 			Type:   "join",
@@ -229,10 +229,10 @@ func handleRoomAction(c *hub.Client, action RoomAction, conn *websocket.Conn) {
 	case "join":
 		// Join a room
 		response := c.Hub.RoomManager.JoinRoomAsync(c, action.RoomID)
-		
+
 		if response.Success {
 			c.RoomID = action.RoomID
-			
+
 			// Send join success response
 			joinResponse := map[string]interface{}{
 				"type":     "room_joined",
@@ -240,7 +240,7 @@ func handleRoomAction(c *hub.Client, action RoomAction, conn *websocket.Conn) {
 				"roomName": response.Room.Name,
 				"message":  "Successfully joined room",
 			}
-			
+
 			joinResponseJSON, _ := json.Marshal(joinResponse)
 			c.Send <- joinResponseJSON
 		} else {
@@ -249,7 +249,7 @@ func handleRoomAction(c *hub.Client, action RoomAction, conn *websocket.Conn) {
 				"type":    "room_error",
 				"message": response.Message,
 			}
-			
+
 			errorResponseJSON, _ := json.Marshal(errorResponse)
 			c.Send <- errorResponseJSON
 		}
@@ -258,16 +258,16 @@ func handleRoomAction(c *hub.Client, action RoomAction, conn *websocket.Conn) {
 		// Leave current room
 		if c.RoomID != "" {
 			success := c.Hub.RoomManager.LeaveRoomAsync(c, c.RoomID)
-			
+
 			if success {
 				c.RoomID = ""
-				
+
 				// Send leave success response
 				leaveResponse := map[string]interface{}{
 					"type":    "room_left",
 					"message": "Successfully left room",
 				}
-				
+
 				leaveResponseJSON, _ := json.Marshal(leaveResponse)
 				c.Send <- leaveResponseJSON
 			}
@@ -276,7 +276,7 @@ func handleRoomAction(c *hub.Client, action RoomAction, conn *websocket.Conn) {
 	case "list":
 		// List all available rooms
 		rooms := c.Hub.RoomManager.GetRooms()
-		
+
 		roomList := make([]map[string]interface{}, 0, len(rooms))
 		for _, room := range rooms {
 			roomList = append(roomList, map[string]interface{}{
@@ -287,12 +287,12 @@ func handleRoomAction(c *hub.Client, action RoomAction, conn *websocket.Conn) {
 				"createdAt":   room.CreatedAt.Format(time.RFC3339),
 			})
 		}
-		
+
 		response := map[string]interface{}{
 			"type":  "room_list",
 			"rooms": roomList,
 		}
-		
+
 		responseJSON, _ := json.Marshal(response)
 		c.Send <- responseJSON
 	}

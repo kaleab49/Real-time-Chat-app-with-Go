@@ -56,13 +56,42 @@ realtime-chat/
    go run main.go
    ```
 
-2. **Open your browser:**
-   Navigate to `http://localhost:8080`
+2. **Access the application:**
+   - **Local Access:** `http://localhost:8080`
+   - **Network Access:** `http://[YOUR_IP]:8080` (shown when server starts)
 
 3. **Start chatting:**
    - Enter a username
+   - Create or join chat rooms
    - Type messages and press Enter to send
    - Open multiple browser tabs to test with multiple users
+
+## 🌐 Network Access
+
+The server is configured to accept connections from your local network, making it accessible from other devices:
+
+### **From the same computer:**
+- Use `http://localhost:8080`
+
+### **From other devices on your network:**
+- Use `http://[YOUR_IP]:8080` (IP address shown when server starts)
+- Make sure all devices are connected to the same WiFi network
+- Some devices might need firewall permission
+
+### **Find your IP address:**
+```bash
+# Run the helper script
+./get-network-info.sh
+
+# Or manually find your IP
+hostname -I
+```
+
+### **Troubleshooting Network Access:**
+- Ensure all devices are on the same network
+- Check firewall settings on your computer
+- Try accessing from a mobile device on the same WiFi
+- Verify the IP address is correct
 
 ## Architecture Overview
 
